@@ -8,11 +8,23 @@ def get_cmd_args():
   arg_parser = argparse.ArgumentParser(description='Lookup MAC addresses via API call.')
   arg_parser.add_argument('mac_list', type=str, help='Path to file containing a list of MAC addresses (one per line).')
   arg_parser.add_argument('-f','--format', choices=['plain','standard','dash'], default='standard', help= 'Select an output format for MAC addresses to displayed in.')
-  cmd_args = arg_parser.parse_args()
-  return(cmd_args)
+  arg_parser.add_argument('-c','--case', choices=['upper','lower'], default='lower')
+  return(arg_parser.parse_args())
 
-def format_mac(mac: str,format):
-  mac = re.sub('[.:-]', '', mac).lower()  # remove delimiters and convert to lower case
+def format_mac(mac,format=get_cmd_args().format,case=get_cmd_args().case):
+  # Convert to upper case
+  def upper(mac):
+    return(mac.upper())
+  # Convert to lower case
+  def lower(mac):
+    return(mac.lower())
+  case_options = {'upper': upper,
+                  'lower': lower
+  }
+  # Case selection
+  mac = case_options[case](mac)
+  
+  mac = re.sub('[.:-]', '', mac) # Remove delimiters
   mac = ''.join(mac.split())  # remove whitespaces
   assert len(mac) == 12  # length should be now exactly 12 (eg. 008041aefd7e)
   assert mac.isalnum()  # should only contain letters and numbers
@@ -26,12 +38,12 @@ def format_mac(mac: str,format):
   # Return MAC in dash separated format.
   def dash(mac):
     return("-".join(["%s" % (mac[i:i+2]) for i in range(0, 12, 2)]))
-
-  options = {'plain'   : plain,
+  # Format selection
+  format_options = {'plain'   : plain,
              'standard': standard,
              'dash'    : dash
   }
-  return(options[format](mac))
+  return(format_options[format](mac))
 
 def file_input(mac_list_file_path = get_cmd_args().mac_list):
   with open(mac_list_file_path, 'r') as mac_list:
